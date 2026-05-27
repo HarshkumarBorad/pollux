@@ -47,6 +47,20 @@ class PolluxConfig(BaseSettings):
     # Chosen at startup; same agent business logic either way.
     pollux_orchestration: Literal["mcp", "a2a"] = "mcp"
 
+    # --- Knowledge layer (Phase 2) ---
+    # persistent — embedded ChromaDB, on-disk persistence (single-container demo).
+    # http       — talks to a separate Chroma service (for split deploys).
+    chroma_mode: Literal["persistent", "http"] = "persistent"
+    chroma_persist_path: str = "./chroma_data"
+    chroma_host: str = "localhost"
+    chroma_port: int = 8000
+    knowledge_collection: str = "pollux_knowledge"
+
+    # HF embedding model + provider routing. BGE-M3 is multilingual.
+    hf_embed_model: str = "BAAI/bge-m3"
+    hf_embed_batch_size: int = 32
+    hf_embed_provider: str = "auto"
+
     @property
     def openai_enabled(self) -> bool:
         """True when OpenAI is configured as the Coordinator/Planner fallback."""

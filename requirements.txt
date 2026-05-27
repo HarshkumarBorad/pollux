@@ -5,6 +5,17 @@ structlog>=24.4.0,<26
 opentelemetry-api>=1.27.0,<2
 opentelemetry-sdk>=1.27.0,<2
 
+# Phase 2 — knowledge layer (ChromaDB + BGE-M3 + ingest)
+chromadb>=0.5.20,<0.6
+huggingface_hub>=0.24.0,<1
+langchain-core>=0.3.0,<0.4
+langchain-community>=0.3.0,<0.4
+langchain-text-splitters>=0.3.0,<0.4
+pypdf>=4.0.0,<6
+docx2txt>=0.8
+beautifulsoup4>=4.12.0,<5
+lxml>=5.0.0,<6
+
 # Dev / test (kept in main requirements for one-step setup — split into a
 # requirements-dev.txt later if production builds need to drop them).
 pytest>=8.0.0,<9

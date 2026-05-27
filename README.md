@@ -39,7 +39,7 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 ## 🧭 Build phases
 
 - [x] **Phase 1** — Project scaffold + core models
-- [ ] **Phase 2** — Standalone knowledge layer (ChromaDB + BGE-M3)
+- [x] **Phase 2** — Standalone knowledge layer (ChromaDB + BGE-M3)
 - [ ] **Phase 3** — Agent abstraction + four specialist agents
 - [ ] **Phase 4** — Coordinator + Escalation
 - [ ] **Phase 5** — Task orchestrator + SQLite persistence
@@ -76,6 +76,36 @@ Or via Docker:
 docker compose build core
 docker compose run --rm core
 ```
+
+### Phase 2 — try the knowledge layer
+
+The knowledge layer is one shared ChromaDB collection with **per-chunk
+domain metadata** — agents filter by domain at query time rather than
+hitting separate collections. Embedded by default (no Chroma service to
+run); switch to HTTP mode via env when you want a split deploy.
+
+```cmd
+:: Drop documents into a domain's folder
+mkdir data\knowledge\hr
+copy somefile.pdf data\knowledge\hr\
+
+:: Ingest (idempotent — content-hashed chunk IDs upsert in place)
+python -m core.knowledge.cli ingest --domain hr --path .\data\knowledge\hr
+
+:: Test query
+python -m core.knowledge.cli query "What is the leave policy?" --domain hr
+
+:: See chunk counts
+python -m core.knowledge.cli count
+
+:: Wipe a domain and re-ingest
+python -m core.knowledge.cli reset --domain hr
+```
+
+Domains: `hr` / `it` / `product` / `general`. The first three are the
+knowledge slices owned by the HR / IT / Customer-Facing specialist
+agents in Phase 3+. `general` is the catch-all for cross-domain or
+uncategorized docs.
 
 ## 🛠️ Tech stack (planned — phases progressively add these)
 
