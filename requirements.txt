@@ -1,0 +1,21 @@
+# Phase 1 — core models, config, telemetry. Intentionally lean.
+pydantic>=2.9.0,<3
+pydantic-settings>=2.5.0,<3
+structlog>=24.4.0,<26
+opentelemetry-api>=1.27.0,<2
+opentelemetry-sdk>=1.27.0,<2
+
+# Dev / test (kept in main requirements for one-step setup — split into a
+# requirements-dev.txt later if production builds need to drop them).
+pytest>=8.0.0,<9
+pytest-asyncio>=0.24.0,<2
+
+# Later phases will add:
+# Phase 2 — knowledge layer: chromadb, langchain-*, huggingface_hub, pypdf, sentence-transformers
+# Phase 3 — agents: langgraph
+# Phase 5 — task persistence: sqlalchemy, aiosqlite
+# Phase 6 — MCP variant: fastmcp
+# Phase 7 — A2A variant: a2a (Google SDK)
+# Phase 8 — REST API: fastapi, uvicorn[standard], websockets
+# Phase 9 — UI: streamlit, pandas, requests
+# Phase 10 — observability extras: opentelemetry-exporter-otlp, prometheus-client

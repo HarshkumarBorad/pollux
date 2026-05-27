@@ -1,0 +1,38 @@
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Virtual envs
+.venv
+venv
+env
+
+# IDE
+.idea
+.vscode
+
+# Git
+.git
+.gitignore
+
+# Local data
+chroma_data
+*.log
+*.db
+*.db-shm
+*.db-wal
+logs
+
+# Streamlit secrets (never want these in the image)
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bundled docs that may be large at runtime — mount them instead
+data/knowledge/**/*.pdf
+data/meetings/*.vtt

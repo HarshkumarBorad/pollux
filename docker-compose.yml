@@ -1,0 +1,11 @@
+# Phase 1 — scaffold only. The api / ui / mcp / a2a services arrive in later phases.
+services:
+  core:
+    build: .
+    image: pollux:latest
+    container_name: pollux-core
+    env_file:
+      - .env
+    # Default command runs the core smoketest. Useful to confirm the image
+    # builds and the core module imports cleanly before adding services.
+    command: ["python", "-m", "core.smoketest"]

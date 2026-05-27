@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local data / SQLite
+*.db
+*.db-shm
+*.db-wal
+chroma_data/
+
+# Logs
+*.log
+logs/
+
+# User-supplied documents / transcripts in data/ are NOT committed — they may
+# be third-party or personal. Only sample .md / .json fixtures that ship with
+# the repo are tracked.
+data/knowledge/**/*.pdf
+data/knowledge/**/*.docx
+data/knowledge/**/*.doc
+data/knowledge/**/*.odt
+data/meetings/*.vtt
+data/meetings/*.srt
