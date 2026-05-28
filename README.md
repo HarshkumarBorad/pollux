@@ -61,6 +61,7 @@ copy .env.example .env
 :: 2. Install lightweight deps (Phase 1 only needs core libs)
 python -m venv .venv
 .venv\Scripts\activate
+python -m pip install --upgrade pip      :: pip <23 trips on prebuilt wheels for greenlet/lxml on Windows
 pip install -r requirements.txt
 
 :: 3. Run the smoketest — verifies imports, model round-trips, and telemetry
