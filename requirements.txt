@@ -19,6 +19,11 @@ lxml>=5.0.0,<6
 # Phase 3 — agent orchestration (LangGraph per-agent state machines)
 langgraph>=0.2.0,<0.4
 
+# Phase 4 — Coordinator + Escalation. OpenAI client is optional at runtime
+# (only used when OPENAI_API_KEY is set) but pinned here so the upgrade path
+# is one env-var flip, not a pip install.
+openai>=1.50.0,<3
+
 # Dev / test (kept in main requirements for one-step setup — split into a
 # requirements-dev.txt later if production builds need to drop them).
 pytest>=8.0.0,<9

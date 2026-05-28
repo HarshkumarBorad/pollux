@@ -60,13 +60,19 @@ class BaseAgent(ABC):
             )
 
         self.log = get_logger(f"pollux.agents.{cls.id}")
-        self.llm = HFChatLLM(
-            max_tokens=cls.llm_max_tokens, temperature=cls.llm_temperature
-        )
+        self.llm = self._make_llm()
         self.retriever: Optional[Retriever] = (
             Retriever() if cls.domain is not None else None
         )
         self._graph = self._build_graph()
+
+    def _make_llm(self):
+        """LLM factory hook. Default = HFChatLLM. Coordinator + OpsPlanner
+        override this to prefer OpenAI when OPENAI_API_KEY is set."""
+        return HFChatLLM(
+            max_tokens=type(self).llm_max_tokens,
+            temperature=type(self).llm_temperature,
+        )
 
     # ----- Discovery ---------------------------------------------------------
 

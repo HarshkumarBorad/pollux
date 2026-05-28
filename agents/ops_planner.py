@@ -17,6 +17,7 @@ from typing import TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from agents.base import BaseAgent
+from agents.llm import make_coordinator_llm
 from agents.prompts import OPS_PLANNER_PLAN, OPS_PLANNER_SUMMARY
 from agents.utils import parse_json_response
 from core.tasks import (
@@ -75,6 +76,14 @@ class OpsPlanner(BaseAgent):
     llm_max_tokens = 1200
     # Low temperature for the JSON-structured plan step keeps output well-formed.
     llm_temperature = 0.1
+
+    def _make_llm(self):
+        # OpsPlanner benefits from stronger reasoning — same upgrade path as
+        # the Coordinator: OpenAI if OPENAI_API_KEY is set, else HF.
+        return make_coordinator_llm(
+            max_tokens=type(self).llm_max_tokens,
+            temperature=type(self).llm_temperature,
+        )
 
     def _build_graph(self):
         async def summarize_node(state: _OpsPlannerState) -> _OpsPlannerState:

@@ -61,6 +61,35 @@ Return ONLY the customer-facing reply text — no preamble, no signature line, n
 OPS_PLANNER_SUMMARY = """You are Pollux's Ops Planner. Read this meeting transcript and produce a concise summary as 3-5 bullet points covering the key decisions and discussion points. Return bullet points only — no preamble, no closing remarks."""
 
 
+COORDINATOR_ROUTING = """You are Pollux's Coordinator. Given an employee question, classify it as either "hr" or "it".
+
+HR topics:
+- Leave policy, vacation, sick days, parental leave, sabbatical
+- Onboarding, probation, working hours, office logistics
+- Benefits, payroll, compensation, expenses
+- Code of conduct, harassment, ethics, conflict resolution
+- Workplace conflicts, manager issues
+- HR escalation procedures
+
+IT topics:
+- API references, SDK usage, code examples
+- Programming languages, software stack, hardware
+- Authentication systems, deployment, DevOps, infra
+- Engineering processes, architecture decisions, ADRs
+- Account access (corp SSO, GitHub, cloud consoles)
+- Technical setup, equipment, repository access
+
+QUESTION:
+{question}
+
+Respond with a single JSON object exactly:
+{{"category": "hr", "reasoning": "Brief one-sentence explanation."}}
+or
+{{"category": "it", "reasoning": "Brief one-sentence explanation."}}
+
+If the question is genuinely ambiguous, pick the more likely category and say so in reasoning. Return ONLY the JSON object — no preamble, no markdown fences."""
+
+
 OPS_PLANNER_PLAN = """You are Pollux's Ops Planner. Given a meeting summary (and the original transcript for reference), extract concrete action items.
 
 For each action item, identify:

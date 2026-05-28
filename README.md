@@ -41,7 +41,7 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 - [x] **Phase 1** — Project scaffold + core models
 - [x] **Phase 2** — Standalone knowledge layer (ChromaDB + BGE-M3)
 - [x] **Phase 3** — Agent abstraction + four specialist agents
-- [ ] **Phase 4** — Coordinator + Escalation
+- [x] **Phase 4** — Coordinator + Escalation
 - [ ] **Phase 5** — Task orchestrator + SQLite persistence
 - [ ] **Phase 6** — MCP variant
 - [ ] **Phase 7** — A2A variant
@@ -144,9 +144,62 @@ Each agent's pipeline:
 | `ops_planner` | summarize → plan (JSON) | HF chat × 2 |
 
 Specialists stay on HF Inference deliberately — the "works without OpenAI"
-story is part of the demo. The Coordinator and Ops Planner in Phase 4 may
-optionally upgrade to OpenAI when `OPENAI_API_KEY` is set, for stronger
-reasoning at the routing / planning layer.
+story is part of the demo. The Coordinator and Ops Planner upgrade to
+OpenAI when `OPENAI_API_KEY` is set (see Phase 4).
+
+### Phase 4 — Coordinator + Escalation (the full pipeline)
+
+Six agents now wired together. The Coordinator routes; the specialist
+processes; the Escalation/QA agent reviews. Run the whole thing end-to-end:
+
+```cmd
+:: Employee question — Coordinator's LLM picks HR vs IT
+python -m agents.cli task --type employee "What's the leave policy?"
+
+:: Customer ticket — rule-routes to customer_facing
+python -m agents.cli task --type customer ^
+    --subject "API key not working" ^
+    --body "I rotated my key yesterday and now get 401s."
+
+:: Meeting transcript — rule-routes to ops_planner
+python -m agents.cli task --type ops --transcript-file meeting.txt
+```
+
+Pipeline shape:
+
+```
+       ┌─────────────────────────────┐
+       │  Task arrives (from REST)   │
+       └──────────────┬──────────────┘
+                      ▼
+       ┌─────────────────────────────┐
+       │      Coordinator            │      ← OpenAI if OPENAI_API_KEY set,
+       │   classifies + routes       │        else HF. Rule-based shortcuts
+       └──────────────┬──────────────┘        for CUSTOMER_SUPPORT / OPS_WORKFLOW.
+                      ▼
+       ┌─────────────────────────────┐
+       │  HR | IT | CustomerFacing   │      ← HF Inference only (specialists
+       │  | OpsPlanner               │        stay on HF deliberately).
+       └──────────────┬──────────────┘
+                      ▼
+       ┌─────────────────────────────┐
+       │     Escalation / QA         │      ← Rule-based verdict in Phase 4.
+       │  ship | revise | escalate   │        LLM-judge optional in Phase 10.
+       └──────────────┬──────────────┘
+                      ▼
+              status = completed
+                or escalated
+```
+
+| Verdict | When | Final status |
+|---|---|---|
+| `ship` | Specialist confidence ≥ 0.7, no no-info marker | `COMPLETED` |
+| `revise` | Confidence 0.4 – 0.7 (grey zone) | `ESCALATED` (Phase 4 collapses revise → escalate; Phase 5 may loop) |
+| `escalate` | Confidence < 0.4 **OR** no-info marker **OR** task error | `ESCALATED` |
+
+**OpenAI fallback flag.** Set `OPENAI_API_KEY=sk-...` in `.env` and the
+Coordinator + OpsPlanner auto-upgrade. Everything else stays on HF — that
+keeps `OPENAI_API_KEY` purely additive, not required.
 
 ## 🛠️ Tech stack (planned — phases progressively add these)
 
