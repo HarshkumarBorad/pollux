@@ -42,7 +42,7 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 - [x] **Phase 2** — Standalone knowledge layer (ChromaDB + BGE-M3)
 - [x] **Phase 3** — Agent abstraction + four specialist agents
 - [x] **Phase 4** — Coordinator + Escalation
-- [ ] **Phase 5** — Task orchestrator + SQLite persistence
+- [x] **Phase 5** — Task orchestrator + SQLite persistence
 - [ ] **Phase 6** — MCP variant
 - [ ] **Phase 7** — A2A variant
 - [ ] **Phase 8** — REST API + WebSocket streaming
@@ -200,6 +200,54 @@ Pipeline shape:
 **OpenAI fallback flag.** Set `OPENAI_API_KEY=sk-...` in `.env` and the
 Coordinator + OpsPlanner auto-upgrade. Everything else stays on HF — that
 keeps `OPENAI_API_KEY` purely additive, not required.
+
+### Phase 5 — orchestrator + persistence
+
+Phase 4's in-memory `run_task()` is now wrapped by `TaskOrchestrator`,
+which adds **SQLite-backed persistence**, **retries on transient
+failures**, **per-task timeouts**, and a **"revise" loop** (one extra run
+when Escalation's verdict is `revise` before collapsing to `escalated`).
+
+```cmd
+:: One-time DB setup
+python -m orchestrator.cli migrate
+
+:: Submit a task — orchestrator persists it, runs the pipeline, persists
+:: every status transition, and returns the final task.
+python -m orchestrator.cli submit --type employee "What's the leave policy?"
+
+:: Browse the task store
+python -m orchestrator.cli list                          :: most recent 20
+python -m orchestrator.cli list --status escalated       :: filter
+python -m orchestrator.cli status <task-id>              :: current state
+python -m orchestrator.cli history <task-id>             :: event log
+```
+
+Default DB is `sqlite+aiosqlite:///pollux.db` (created in the repo root).
+Swap to Postgres for production by setting `DATABASE_URL=postgresql+asyncpg://...`
+in `.env` — same schema works in both, no Alembic needed for the demo (Phase 10
+may add migrations once the schema starts evolving).
+
+**Two submit modes:**
+- `orchestrator.submit(task)` — block until the pipeline finishes. Used by
+  the CLI and Phase 8's sync REST endpoints.
+- `orchestrator.submit_async(task)` — persist + return immediately;
+  background asyncio task drives the pipeline. Used by Phase 8's async
+  REST endpoint pattern (`POST /tasks` returns 202, client polls
+  `GET /tasks/{id}` for progress).
+
+**Knobs** (`TaskOrchestrator` constructor):
+- `timeout=180` — per-attempt timeout in seconds
+- `max_retries=2` — transient-error retries before marking FAILED
+- `revise_attempts=1` — how many times Escalation's `revise` verdict
+  triggers a fresh run
+
+Schema is two tables, both queryable directly:
+- `tasks` — current state of each task (indexed `status`, `assigned_agent`,
+  `updated_at`); full pydantic Task snapshot lives in `payload_json`.
+- `task_events` — append-only timeline (`submitted` → `routed` → `done`,
+  or `retry_timeout` / `retry_error` / `revise_retry` on the unhappy path).
+  Powers the per-task history view in the Phase 9 UI.
 
 ## 🛠️ Tech stack (planned — phases progressively add these)
 

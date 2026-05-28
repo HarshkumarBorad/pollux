@@ -24,6 +24,11 @@ langgraph>=0.2.0,<0.4
 # is one env-var flip, not a pip install.
 openai>=1.50.0,<3
 
+# Phase 5 — Task orchestrator + SQLite persistence (async-friendly default;
+# swap to postgres+asyncpg in production via DATABASE_URL).
+sqlalchemy[asyncio]>=2.0.30,<3
+aiosqlite>=0.20.0,<1
+
 # Dev / test (kept in main requirements for one-step setup — split into a
 # requirements-dev.txt later if production builds need to drop them).
 pytest>=8.0.0,<9
