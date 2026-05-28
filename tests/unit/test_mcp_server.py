@@ -26,22 +26,41 @@ EXPECTED_TOOLS = {
 }
 
 
+def _registered_tool_names(mcp_instance) -> set[str]:
+    """Introspect registered FastMCP tools.
+
+    FastMCP 2.x's public list-tools method has moved between minor versions
+    (`list_tools`, `get_tools`, `_mcp_server.list_tools`, ...). The internal
+    `_tool_manager._tools` dict is the actual storage and has stayed put
+    across the 2.x series — every `@mcp.tool()` registration writes here.
+    Worth the private-attribute access for test stability.
+    """
+    tm = getattr(mcp_instance, "_tool_manager", None)
+    if tm is not None:
+        for attr in ("_tools", "tools"):
+            tools = getattr(tm, attr, None)
+            if isinstance(tools, dict):
+                return set(tools.keys())
+    return set()
+
+
 def test_mcp_module_imports_cleanly() -> None:
     """If any @mcp.tool registration fails (wrong arg types, typo in decorator
-    options, etc.) the import crashes — and that's what this test catches."""
+    options, etc.) the import crashes — that's what this test catches."""
     from mcp_variant import server
 
     assert server.mcp is not None
     assert server.mcp.name == "Pollux"
 
 
-@pytest.mark.asyncio
-async def test_all_expected_tools_are_registered() -> None:
-    """FastMCP exposes registered tools via `list_tools()` — confirm every
-    name we promise in the docs is actually present."""
+def test_all_expected_tools_are_registered() -> None:
+    """Every name we promise in the README must be reachable as a tool."""
     from mcp_variant.server import mcp
 
-    tools = await mcp.list_tools()
-    names = {t.name for t in tools}
+    names = _registered_tool_names(mcp)
+    assert names, (
+        "Could not introspect FastMCP tools. Either FastMCP's internal layout "
+        "changed (look at `mcp._tool_manager`) or registration failed silently."
+    )
     missing = EXPECTED_TOOLS - names
     assert not missing, f"Tools missing from MCP server registration: {missing}"
