@@ -43,7 +43,7 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 - [x] **Phase 3** — Agent abstraction + four specialist agents
 - [x] **Phase 4** — Coordinator + Escalation
 - [x] **Phase 5** — Task orchestrator + SQLite persistence
-- [ ] **Phase 6** — MCP variant
+- [x] **Phase 6** — MCP variant
 - [ ] **Phase 7** — A2A variant
 - [ ] **Phase 8** — REST API + WebSocket streaming
 - [ ] **Phase 9** — Streamlit UI (chat / ticket inbox / ops workflows / agent log)
@@ -248,6 +248,58 @@ Schema is two tables, both queryable directly:
 - `task_events` — append-only timeline (`submitted` → `routed` → `done`,
   or `retry_timeout` / `retry_error` / `revise_retry` on the unhappy path).
   Powers the per-task history view in the Phase 9 UI.
+
+### Phase 6 — MCP variant (10 tools)
+
+The full Pollux system is now reachable as an **MCP server**. Run it locally
+and connect Claude Desktop / Cline / Cursor / any MCP client. Same agent
+business logic as the orchestrator CLI — just a different transport.
+
+```cmd
+:: Stdio mode (used by Claude Desktop and friends)
+python -m mcp_variant.server
+
+:: Streamable HTTP for remote MCP clients
+python -m mcp_variant.server --transport http --port 8002
+```
+
+**Tools exposed:**
+
+| Tool | Category | What it does |
+|---|---|---|
+| `submit_employee_question` | submit | Full pipeline; Coordinator routes HR vs IT, Escalation reviews, persisted |
+| `submit_customer_ticket` | submit | Full pipeline for support tickets; two-stage tone-shifted reply |
+| `submit_ops_workflow` | submit | Full pipeline for meeting transcripts → structured action items |
+| `query_hr` | direct | HR Specialist only; no Coordinator, no DB, no QA |
+| `query_it` | direct | IT Specialist only |
+| `draft_customer_reply` | direct | Customer-Facing Specialist only |
+| `plan_from_meeting` | direct | Ops Planner only |
+| `list_agents` | discovery | All six AgentCards with capabilities |
+| `get_task_status` | inspection | Look up a task by ID |
+| `list_tasks` | inspection | Recent submissions, optionally filtered by status |
+
+**Wire it into Claude Desktop** — add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "pollux": {
+      "command": "python",
+      "args": ["-m", "mcp_variant.server"],
+      "cwd": "/absolute/path/to/pollux"
+    }
+  }
+}
+```
+
+Restart Claude Desktop — tools appear in the picker. Ask:
+*"Use pollux to draft a customer reply for ticket #4711…"* and Claude picks
+`submit_customer_ticket`, sees the routing decision, the two-stage draft,
+the QA verdict, all in one tool call.
+
+The MCP server idempotently runs the DB migration on startup, so a fresh
+clone works with a single command (no `python -m core.db.migrate create`
+step needed).
 
 ## 🛠️ Tech stack (planned — phases progressively add these)
 
