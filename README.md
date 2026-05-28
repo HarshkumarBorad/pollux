@@ -40,7 +40,7 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 
 - [x] **Phase 1** — Project scaffold + core models
 - [x] **Phase 2** — Standalone knowledge layer (ChromaDB + BGE-M3)
-- [ ] **Phase 3** — Agent abstraction + four specialist agents
+- [x] **Phase 3** — Agent abstraction + four specialist agents
 - [ ] **Phase 4** — Coordinator + Escalation
 - [ ] **Phase 5** — Task orchestrator + SQLite persistence
 - [ ] **Phase 6** — MCP variant
@@ -104,8 +104,48 @@ python -m core.knowledge.cli reset --domain hr
 
 Domains: `hr` / `it` / `product` / `general`. The first three are the
 knowledge slices owned by the HR / IT / Customer-Facing specialist
-agents in Phase 3+. `general` is the catch-all for cross-domain or
-uncategorized docs.
+agents. `general` is the catch-all for cross-domain or uncategorized docs.
+
+### Phase 3 — try the specialist agents
+
+Four agents wired up, each with its own LangGraph state machine. Test any
+of them standalone (the Coordinator that routes between them lands in
+Phase 4):
+
+```cmd
+:: List the agent roster + capabilities
+python -m agents.cli list
+
+:: HR knowledge Q&A
+python -m agents.cli hr "What is the leave policy?"
+
+:: IT/SDK Q&A
+python -m agents.cli it "Which Python version is required for the SDK?"
+
+:: Customer-facing reply (two-stage: internal draft -> tone-shifted rewrite)
+python -m agents.cli customer ^
+    --subject "API key not working" ^
+    --body "I rotated my key yesterday and now get 401s on every call."
+
+:: Ops planner (decompose a meeting transcript into action items)
+python -m agents.cli ops --transcript-file .\meeting.txt ^
+    --title "Platform weekly" ^
+    --attendees "Lina,Marc"
+```
+
+Each agent's pipeline:
+
+| Agent | Graph | LLM calls |
+|---|---|---|
+| `hr_specialist` | retrieve → synthesize | HF chat × 1 |
+| `it_specialist` | retrieve → synthesize | HF chat × 1 |
+| `customer_facing` | retrieve → draft → rewrite | HF chat × 2 |
+| `ops_planner` | summarize → plan (JSON) | HF chat × 2 |
+
+Specialists stay on HF Inference deliberately — the "works without OpenAI"
+story is part of the demo. The Coordinator and Ops Planner in Phase 4 may
+optionally upgrade to OpenAI when `OPENAI_API_KEY` is set, for stronger
+reasoning at the routing / planning layer.
 
 ## 🛠️ Tech stack (planned — phases progressively add these)
 

@@ -16,6 +16,9 @@ docx2txt>=0.8
 beautifulsoup4>=4.12.0,<5
 lxml>=5.0.0,<6
 
+# Phase 3 — agent orchestration (LangGraph per-agent state machines)
+langgraph>=0.2.0,<0.4
+
 # Dev / test (kept in main requirements for one-step setup — split into a
 # requirements-dev.txt later if production builds need to drop them).
 pytest>=8.0.0,<9
