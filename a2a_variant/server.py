@@ -1,7 +1,8 @@
 """Pollux A2A server.
 
 Mounts one A2A endpoint per Pollux agent on a single Starlette app, each
-publishing its Agent Card at `/agents/<id>/.well-known/agent-card.json`.
+publishing its Agent Card at `/agents/<id>/.well-known/agent-card.json` and
+accepting JSON-RPC tasks at `/agents/<id>/`.
 
 Five public agents are exposed (Escalation is meta-only and intentionally
 unmounted):
@@ -9,7 +10,7 @@ unmounted):
     /agents/it_specialist
     /agents/customer_facing
     /agents/ops_planner
-    /agents/coordinator    ← runs the FULL pipeline (orchestrator + QA + persist)
+    /agents/coordinator    ← runs the FULL pipeline via orchestrator + QA + persist
 
 Run locally:
     python -m a2a_variant.server                    :: 127.0.0.1:8003
@@ -22,8 +23,11 @@ import argparse
 import asyncio
 
 import uvicorn
-from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.routes import (
+    create_agent_card_routes,
+    create_jsonrpc_routes,
+)
 from a2a.server.tasks import InMemoryTaskStore
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
@@ -41,12 +45,29 @@ SKIP_AGENTS: set[str] = {"escalation"}
 
 
 def _build_executor(agent_id: str):
-    """One executor per agent. Coordinator gets the special pipeline-running
-    executor; everyone else gets the generic specialist wrapper."""
+    """One executor per agent. Coordinator gets the pipeline-running variant;
+    everyone else gets the generic specialist wrapper."""
     if agent_id == "coordinator":
         return CoordinatorExecutor()
     cls = AGENT_REGISTRY[agent_id]
     return PolluxAgentExecutor(cls())
+
+
+def _build_agent_subapp(agent_card, executor) -> Starlette:
+    """Wrap one agent's routes (Agent Card + JSON-RPC) in a Starlette sub-app
+    so it can be mounted under `/agents/<id>` in the main app."""
+    request_handler = DefaultRequestHandler(
+        agent_executor=executor,
+        task_store=InMemoryTaskStore(),
+        agent_card=agent_card,
+    )
+    # Agent Card is served at `<mount>/.well-known/agent-card.json`;
+    # JSON-RPC dispatcher handles `<mount>/`.
+    routes = (
+        list(create_agent_card_routes(agent_card))
+        + list(create_jsonrpc_routes(request_handler, rpc_url="/"))
+    )
+    return Starlette(routes=routes)
 
 
 def build_app(base_url: str = "http://localhost:8003") -> Starlette:
@@ -62,23 +83,16 @@ def build_app(base_url: str = "http://localhost:8003") -> Starlette:
 
         card = build_card(agent_cls, base_url=base_url)
         executor = _build_executor(agent_id)
-        request_handler = DefaultRequestHandler(
-            agent_executor=executor,
-            task_store=InMemoryTaskStore(),
-        )
-        a2a_app = A2AStarletteApplication(
-            agent_card=card,
-            http_handler=request_handler,
-        ).build()
+        sub_app = _build_agent_subapp(card, executor)
 
         mount_path = f"/agents/{agent_id}"
-        routes.append(Mount(mount_path, app=a2a_app))
+        routes.append(Mount(mount_path, app=sub_app))
         mounted_agents.append(
             {
                 "id": agent_id,
                 "name": agent_cls.name,
                 "description": agent_cls.description,
-                "url": f"{base_url}{mount_path}",
+                "url": f"{base_url}{mount_path}/",
                 "card_url": f"{base_url}{mount_path}/.well-known/agent-card.json",
                 "domain": agent_cls.domain.value if agent_cls.domain else None,
             }
