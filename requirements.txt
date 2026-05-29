@@ -48,6 +48,14 @@ httpx>=0.27.0,<1
 # starlette but worth pinning so a future bump doesn't surprise us.
 python-multipart>=0.0.18,<1
 
+# Phase 9 — Streamlit UI.
+# `websockets` is the client used by `ui/api_client.py`; the server side
+# was already pulled in by `uvicorn[standard]`.
+streamlit>=1.40.0,<2
+websockets>=12.0,<16
+requests>=2.31.0,<3
+pandas>=2.0.0,<3
+
 # Dev / test (kept in main requirements for one-step setup — split into a
 # requirements-dev.txt later if production builds need to drop them).
 pytest>=8.0.0,<9

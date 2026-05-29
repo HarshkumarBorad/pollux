@@ -46,7 +46,7 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 - [x] **Phase 6** — MCP variant
 - [x] **Phase 7** — A2A variant
 - [x] **Phase 8** — REST API + WebSocket streaming
-- [ ] **Phase 9** — Streamlit UI (chat / ticket inbox / ops workflows / agent log)
+- [x] **Phase 9** — Streamlit UI (chat / ticket inbox / ops workflows / agent log)
 - [ ] **Phase 10** — Observability, deployment, demo polish
 
 ## 🚀 Phase 1 quickstart
@@ -464,6 +464,42 @@ matching middleware there too.
 
 **CORS** is wide-open in dev so the Phase 9 Streamlit UI on a different
 port can call the API. Tighten for any externally-exposed deploy.
+
+### Phase 9 — Streamlit UI (4 pages)
+
+The human-facing surface. Talks exclusively to the Phase 8 REST API +
+WebSocket — no direct orchestrator / DB access from the UI process, so
+the UI can run on a different host than the API in any real deploy.
+
+```cmd
+:: Start the API in one terminal
+python -m api.server
+
+:: Start the UI in another
+streamlit run ui/home.py
+```
+
+Pages (sidebar nav):
+
+| Page | What it does |
+|---|---|
+| 🌟 **Home** | Connectivity check, agent roster cards, recent activity feed |
+| 💬 **Chat** | Employee Q&A — chat input, **live WebSocket stream of pipeline events**, answer with citations, conversation history |
+| 📦 **Tickets** | Customer support inbox + new-ticket form, drafted reply with internal + external versions |
+| 📋 **Workflows** | Meeting transcript input (paste or upload), action items rendered as a sortable table |
+| 📜 **Agent Log** | Operational view across all task types, status filters, per-task event timeline |
+
+The Chat and Tickets and Workflows pages all subscribe to
+`ws://API_URL/tasks/{id}/stream` after submission and update the UI as
+each event lands — pipeline-stage badges fill in live instead of one
+big blocking spinner.
+
+Configuration via env:
+
+| Variable | Purpose |
+|---|---|
+| `POLLUX_API_URL` | REST + WebSocket base URL (default `http://127.0.0.1:8001`) |
+| `POLLUX_API_KEY` | Sent as `X-API-Key` header — must match the API's value if auth is enabled |
 
 ## 🛠️ Tech stack (planned — phases progressively add these)
 
