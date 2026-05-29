@@ -5,6 +5,7 @@ Public (no auth). Health is meant to be polled by load balancers / monitoring.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from agents import list_agent_cards
@@ -22,7 +23,9 @@ async def health(
     db_status = "connected"
     try:
         async with session_factory() as session:
-            await session.execute_options()  # touches the session lazily
+            # `SELECT 1` is the cheapest cross-dialect way to prove the
+            # connection works end-to-end (driver → engine → DB).
+            await session.execute(text("SELECT 1"))
     except Exception:
         db_status = "unreachable"
 
