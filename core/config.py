@@ -39,6 +39,9 @@ class PolluxConfig(BaseSettings):
     # --- API ---
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    # Optional shared-secret for the REST API. Blank → API is open (dev mode).
+    # When set, clients must send `X-API-Key: <value>` on every request.
+    pollux_api_key: Optional[str] = None
 
     # --- App ---
     app_env: Literal["dev", "staging", "production"] = "dev"

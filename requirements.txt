@@ -40,6 +40,14 @@ uvicorn[standard]>=0.34.0,<1.0.0
 a2a-sdk>=0.2.0,<2
 starlette>=0.37.0,<1
 
+# Phase 8 — REST API + WebSocket streaming.
+# uvicorn is already pinned in Phase 6.
+fastapi>=0.115.0,<2
+httpx>=0.27.0,<1
+# python-multipart is needed for FastAPI form support — pulled lazily by
+# starlette but worth pinning so a future bump doesn't surprise us.
+python-multipart>=0.0.18,<1
+
 # Dev / test (kept in main requirements for one-step setup — split into a
 # requirements-dev.txt later if production builds need to drop them).
 pytest>=8.0.0,<9

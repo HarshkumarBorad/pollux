@@ -45,7 +45,7 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 - [x] **Phase 5** — Task orchestrator + SQLite persistence
 - [x] **Phase 6** — MCP variant
 - [x] **Phase 7** — A2A variant
-- [ ] **Phase 8** — REST API + WebSocket streaming
+- [x] **Phase 8** — REST API + WebSocket streaming
 - [ ] **Phase 9** — Streamlit UI (chat / ticket inbox / ops workflows / agent log)
 - [ ] **Phase 10** — Observability, deployment, demo polish
 
@@ -395,6 +395,75 @@ comparison; the short version:
 
 For Pollux, both endpoints serve the same six agents through the same
 LangGraph implementations. Choose by client.
+
+### Phase 8 — REST API + WebSocket streaming
+
+The third client surface — protocol-agnostic HTTP for web UIs, automation,
+and external integrations. Auto-generated Swagger UI at `/docs`.
+
+```cmd
+:: Start the API (idempotently runs DB migrations on boot)
+python -m api.server                 :: 127.0.0.1:8001
+python -m api.server --reload        :: hot-reload during dev
+```
+
+Then open `http://127.0.0.1:8001/docs` for the interactive API explorer.
+
+**Endpoints:**
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/tasks/question` | Submit an employee Q&A — Coordinator routes HR/IT |
+| `POST` | `/tasks/ticket` | Submit a customer support ticket |
+| `POST` | `/tasks/meeting` | Submit a meeting transcript for action-item extraction |
+| `GET`  | `/tasks` | List recent tasks (filterable by status) |
+| `GET`  | `/tasks/{id}` | Task state + full event log |
+| `WS`   | `/tasks/{id}/stream` | Live progress stream (Phase 9 UI subscribes here) |
+| `GET`  | `/agents` | All registered AgentCards |
+| `GET`  | `/health` | Liveness probe |
+
+**Submission shapes** — same envelope, three task-type-specific bodies:
+
+```cmd
+curl -X POST http://127.0.0.1:8001/tasks/question?wait=true ^
+    -H "Content-Type: application/json" ^
+    -d "{\"question\": \"What is the leave policy?\"}"
+```
+
+```cmd
+curl -X POST http://127.0.0.1:8001/tasks/ticket ^
+    -H "Content-Type: application/json" ^
+    -d "{\"subject\": \"Cannot log in\", \"body\": \"401 errors since yesterday.\"}"
+```
+
+```cmd
+curl -X POST http://127.0.0.1:8001/tasks/meeting ^
+    -H "Content-Type: application/json" ^
+    -d "{\"transcript\": \"Lina: ship the migration this sprint...\", \"attendees\": [\"Lina\",\"Marc\"]}"
+```
+
+**Sync vs async.** All `POST /tasks/*` default to **async** mode — they return
+`202 Accepted` with a `task_id` immediately, the orchestrator processes in
+the background, and the client uses the WebSocket to stream progress.
+Add `?wait=true` to block until the pipeline completes (returns the full
+final task in a single `200 OK`).
+
+**WebSocket envelope.** Each frame is a JSON object with `type` and `data`:
+
+| `type` | When | Payload |
+|---|---|---|
+| `status` | On connect | Initial task snapshot |
+| `event` | As entries land in the audit log | `{event_type, payload, created_at}` |
+| `result` | When task reaches a terminal status | Full task with `result` + citations |
+| `error` | Unexpected server-side issue | `{detail: "..."}` |
+
+**Authentication.** API is open by default (dev mode). Set
+`POLLUX_API_KEY=<secret>` in `.env` to require an `X-API-Key` header on
+every request. Same key gates the WebSocket once Phase 10 adds the
+matching middleware there too.
+
+**CORS** is wide-open in dev so the Phase 9 Streamlit UI on a different
+port can call the API. Tighten for any externally-exposed deploy.
 
 ## 🛠️ Tech stack (planned — phases progressively add these)
 
