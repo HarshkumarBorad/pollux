@@ -34,6 +34,12 @@ aiosqlite>=0.20.0,<1
 fastmcp>=2.0.0,<3
 uvicorn[standard]>=0.34.0,<1.0.0
 
+# Phase 7 — A2A variant (Google's Agent-to-Agent protocol).
+# starlette is also pulled in transitively by fastmcp, but pinned here
+# because the A2A server is built on it directly.
+a2a-sdk>=0.2.0,<2
+starlette>=0.37.0,<1
+
 # Dev / test (kept in main requirements for one-step setup — split into a
 # requirements-dev.txt later if production builds need to drop them).
 pytest>=8.0.0,<9

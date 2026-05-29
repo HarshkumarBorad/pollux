@@ -44,7 +44,7 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 - [x] **Phase 4** — Coordinator + Escalation
 - [x] **Phase 5** — Task orchestrator + SQLite persistence
 - [x] **Phase 6** — MCP variant
-- [ ] **Phase 7** — A2A variant
+- [x] **Phase 7** — A2A variant
 - [ ] **Phase 8** — REST API + WebSocket streaming
 - [ ] **Phase 9** — Streamlit UI (chat / ticket inbox / ops workflows / agent log)
 - [ ] **Phase 10** — Observability, deployment, demo polish
@@ -300,6 +300,86 @@ the QA verdict, all in one tool call.
 The MCP server idempotently runs the DB migration on startup, so a fresh
 clone works with a single command (no `python -m core.db.migrate create`
 step needed).
+
+### Phase 7 — A2A variant (5 agent endpoints + discovery)
+
+The same Pollux agent roster is also reachable via Google's **Agent-to-Agent
+(A2A)** protocol. Each agent has its own HTTP endpoint and Agent Card —
+peer-to-peer agent communication instead of MCP's LLM-as-client pattern.
+
+```cmd
+:: Start the A2A server (idempotently creates DB tables, mounts all agents)
+python -m a2a_variant.server --host 127.0.0.1 --port 8003
+```
+
+**Discovery — list every mounted agent:**
+
+```cmd
+curl http://127.0.0.1:8003/
+```
+
+Returns:
+
+```json
+{
+  "name": "Pollux A2A Server",
+  "agents": [
+    {"id": "coordinator", "url": "http://127.0.0.1:8003/agents/coordinator", ...},
+    {"id": "hr_specialist", ...},
+    ...
+  ]
+}
+```
+
+**Each agent publishes its own Agent Card** at the standard well-known path:
+
+```cmd
+curl http://127.0.0.1:8003/agents/hr_specialist/.well-known/agent-card.json
+```
+
+| Endpoint | Behavior |
+|---|---|
+| `/agents/coordinator` | **Full pipeline** — Coordinator → Specialist → Escalation, persisted to the same SQLite store the MCP variant uses |
+| `/agents/hr_specialist` | Direct HR Q&A (no orchestrator, no persistence) |
+| `/agents/it_specialist` | Direct IT Q&A |
+| `/agents/customer_facing` | Direct two-stage ticket reply |
+| `/agents/ops_planner` | Direct transcript → action items |
+
+The Escalation agent is **not** mounted — it's a meta-agent (reviews other
+agents' output, doesn't accept tasks of its own).
+
+**Input shape.** The executor accepts an A2A `DataPart` with a JSON object —
+or a `TextPart` with JSON inside — or a raw `TextPart` (treated as
+`{"text": "..."}`):
+
+| Agent | Expected JSON shape |
+|---|---|
+| `hr_specialist` / `it_specialist` | `{"question": "..."}` |
+| `customer_facing` | `{"subject": "...", "body": "..."}` |
+| `ops_planner` | `{"transcript": "...", "meeting_title": "...", "attendees": [...]}` |
+| `coordinator` | Any of the above — Coordinator infers the task type from the shape |
+
+**Streaming.** A2A's streaming envelope is supported (the agent responds
+inside an event queue), but Pollux currently emits the full result as a
+single event after the agent finishes. True chunk-by-chunk LLM streaming
+through to A2A is a Phase 10 polish item.
+
+### MCP vs A2A — when to use which
+
+Same agent business logic powers both variants; only the inter-agent
+transport differs. Phase 10 will ship a dedicated `docs/mcp_vs_a2a.md`
+comparison; the short version:
+
+| Aspect | MCP | A2A |
+|---|---|---|
+| Discovery | One server lists all tools | One Agent Card per agent at `.well-known/agent-card.json` |
+| Communication | Synchronous JSON-RPC tool calls | Async Tasks with state machine + streaming |
+| Identity | Server-side (trust the MCP server) | Per-agent (Agent Cards can carry auth metadata) |
+| Best for | LLM-as-client picking tools (Claude Desktop, Cline, Cursor) | Peer-to-peer agent meshes — agents calling agents |
+| Wire format | JSON-RPC over stdio or HTTP+SSE | HTTP + SSE + structured task envelope |
+
+For Pollux, both endpoints serve the same six agents through the same
+LangGraph implementations. Choose by client.
 
 ## 🛠️ Tech stack (planned — phases progressively add these)
 
