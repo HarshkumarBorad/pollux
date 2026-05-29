@@ -364,6 +364,21 @@ inside an event queue), but Pollux currently emits the full result as a
 single event after the agent finishes. True chunk-by-chunk LLM streaming
 through to A2A is a Phase 10 polish item.
 
+**Testing it end-to-end.** The modern `a2a-sdk` doesn't ship a CLI tool —
+use the bundled minimal test client instead:
+
+```cmd
+:: Specialist endpoints expect their respective input shapes
+python scripts/a2a_test_client.py http://127.0.0.1:8003/agents/hr_specialist/ "What is the leave policy?"
+
+:: Coordinator runs the full pipeline (Coordinator -> Specialist -> Escalation)
+python scripts/a2a_test_client.py http://127.0.0.1:8003/agents/coordinator/ "What is the leave policy?"
+```
+
+The script resolves the Agent Card, picks JSON-RPC, sends the question,
+and streams back the response. Requires `HF_TOKEN` set + (for meaningful
+HR answers) docs ingested into `data/knowledge/hr/`.
+
 ### MCP vs A2A — when to use which
 
 Same agent business logic powers both variants; only the inter-agent
