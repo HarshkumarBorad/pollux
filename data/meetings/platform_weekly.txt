@@ -1,0 +1,27 @@
+Platform Team Weekly — 2026-05-12 — Attendees: Lina (PM), Marc (Eng), Sara (Eng), Tom (SRE)
+
+Lina: Welcome back, hope the long weekend was good. Let's keep this tight. Three things on the agenda: billing migration status, the v1.4 desktop release, and the on-call rotation. Marc, billing migration?
+
+Marc: We're 2 weeks into the dual-write phase. So far the SQL projection and the event-sourced projection agree on 99.94% of bills. The 0.06% discrepancy is a known timezone bug in the old code — I've documented it in the migration tracker. I think we can shorten the dual-write phase from 3 months to 2 if we can prove the discrepancy doesn't drift. I'd like to commit to the cutover decision by June 30 instead of July 31.
+
+Lina: Sounds good. Marc, can you draft the cutover risk assessment by Friday so we can circulate it to legal?
+
+Marc: Yes, will have it Friday EOD.
+
+Lina: Sara, desktop v1.4. We slipped the multi-project switcher to next sprint, right?
+
+Sara: Yes, I cut it. The dark mode and job templates work is done and in QA. Templates ship with 5 presets — CPU-only training, single-GPU fine-tune, dual-GPU fine-tune, evaluation, and a debug shell. I'd like to add a 6th preset for the new H100 SKU but that needs the pricing team's sign-off on default resource limits.
+
+Lina: Tom, can you reach out to pricing about the H100 defaults?
+
+Tom: Will ping them today. I'd like to coordinate with them anyway because we want to surface H100 availability per region on the status page. We've had three customer questions about it this week.
+
+Lina: Add that to the status page work — high priority. Sara, can the H100 preset land in v1.4.1 instead of holding v1.4?
+
+Sara: Yes, that works. v1.4 stays on its release date — May 19.
+
+Lina: Tom, on-call rotation?
+
+Tom: We're down to four people now that Anna's on parental leave. The current 1-week rotation is fine but the secondary coverage is thin on weekends. I'd like to formalize a "buddy weekend" arrangement where primary and secondary swap if either has plans. Trying it out this month, will report back.
+
+Lina: Approved. Anything else? — OK, see everyone next week.

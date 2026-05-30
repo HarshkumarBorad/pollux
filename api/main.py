@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import system, tasks, websocket
-from core import telemetry
+from core import metrics, telemetry
 from core.db.migrate import create_all_tables
 
 API_TITLE = "Pollux REST API"
@@ -64,6 +64,10 @@ def build_app() -> FastAPI:
     app.include_router(system.router)
     app.include_router(tasks.router)
     app.include_router(websocket.router)
+
+    # Prometheus `/metrics` endpoint + auto-instrumentation for every route.
+    # No-op if prometheus deps aren't installed — graceful degradation.
+    metrics.attach_to(app)
 
     return app
 

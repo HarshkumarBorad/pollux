@@ -1,0 +1,32 @@
+[
+  {
+    "subject": "API key not working after rotation",
+    "body": "Hi, I rotated my API key yesterday via the console and now every call I make returns 401 Unauthorized. I've checked that AURORA_API_KEY is set correctly and the value matches what's shown in the console. Can you help?",
+    "customer_id": "cust_4711",
+    "channel": "email"
+  },
+  {
+    "subject": "Cannot install Aurora Desktop on macOS",
+    "body": "I downloaded AuroraDesktop.dmg and dragged the app into Applications, but when I try to launch it I get 'Aurora Desktop is damaged and cannot be opened'. macOS 13.2. What's the right fix?",
+    "customer_id": "cust_9802",
+    "channel": "web"
+  },
+  {
+    "subject": "Compute job killed with oom_killed",
+    "body": "My training job (jid: 0x4a3f) died after about 90 minutes with status oom_killed. The instance was a gpu-a100 with 16GB RAM. I was hoping to train a 7B model. Should I move to a larger instance?",
+    "customer_id": "cust_1023",
+    "channel": "api"
+  },
+  {
+    "subject": "Where do I see my bill?",
+    "body": "I've been using the platform for the past 2 weeks but I can't find my current usage anywhere in the console. I see a 'Billing' tab but it shows no data. Am I missing something?",
+    "customer_id": "cust_2255",
+    "channel": "web"
+  },
+  {
+    "subject": "Slow uploads from Europe",
+    "body": "Uploads from my Frankfurt office to my eu-central-1 bucket are getting about 10 MB/s. We have a gigabit connection. Is this expected or is there something I should configure?",
+    "customer_id": "cust_7012",
+    "channel": "email"
+  }
+]

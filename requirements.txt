@@ -56,6 +56,11 @@ websockets>=12.0,<16
 requests>=2.31.0,<3
 pandas>=2.0.0,<3
 
+# Phase 10 — Prometheus metrics for the REST API. Optional at runtime;
+# `core.metrics.attach_to()` is a no-op if these aren't installed.
+prometheus-client>=0.20.0,<1
+prometheus-fastapi-instrumentator>=7.0.0,<8
+
 # Dev / test (kept in main requirements for one-step setup — split into a
 # requirements-dev.txt later if production builds need to drop them).
 pytest>=8.0.0,<9

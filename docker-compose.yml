@@ -1,11 +1,112 @@
-# Phase 1 — scaffold only. The api / ui / mcp / a2a services arrive in later phases.
+# Full Pollux stack — one command to bring up every variant.
+#
+#   docker compose up -d
+#
+# Services:
+#   chromadb  :8000  — vector store (HTTP mode for all consumers)
+#   api       :8001  — REST API + WebSocket  (Phase 8)
+#   ui        :8501  — Streamlit UI          (Phase 9)
+#   mcp       :8002  — MCP server (Streamable HTTP) — Phase 6
+#   a2a       :8003  — A2A server            — Phase 7
+#
+# After `docker compose up -d`, ingest the bundled sample docs:
+#   docker compose exec api python scripts/ingest_samples.py
+
 services:
-  core:
+  chromadb:
+    image: chromadb/chroma:0.5.20
+    container_name: pollux-chromadb
+    ports:
+      - "${CHROMA_PORT:-8000}:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      ANONYMIZED_TELEMETRY: "FALSE"
+      IS_PERSISTENT: "TRUE"
+      PERSIST_DIRECTORY: /chroma/chroma
+    restart: unless-stopped
+
+  api:
     build: .
     image: pollux:latest
-    container_name: pollux-core
+    container_name: pollux-api
+    command: python -m api.server --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
     env_file:
       - .env
-    # Default command runs the core smoketest. Useful to confirm the image
-    # builds and the core module imports cleanly before adding services.
-    command: ["python", "-m", "core.smoketest"]
+    environment:
+      # In-cluster DNS overrides the .env's "localhost" defaults.
+      CHROMA_MODE: http
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      DATABASE_URL: sqlite+aiosqlite:///data/pollux.db
+    volumes:
+      # Mount the bundled sample knowledge + persisted SQLite so all four
+      # services see the same task store.
+      - ./data:/app/data
+    depends_on:
+      - chromadb
+    restart: unless-stopped
+
+  ui:
+    build: .
+    image: pollux:latest
+    container_name: pollux-ui
+    command: >
+      streamlit run ui/home.py
+      --server.address=0.0.0.0
+      --server.port=8501
+      --server.headless=true
+      --server.enableXsrfProtection=false
+      --browser.gatherUsageStats=false
+    ports:
+      - "8501:8501"
+    environment:
+      POLLUX_API_URL: http://api:8001
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  mcp:
+    build: .
+    image: pollux:latest
+    container_name: pollux-mcp
+    command: python -m mcp_variant.server --transport http --host 0.0.0.0 --port 8002
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    environment:
+      CHROMA_MODE: http
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      DATABASE_URL: sqlite+aiosqlite:///data/pollux.db
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - chromadb
+    restart: unless-stopped
+
+  a2a:
+    build: .
+    image: pollux:latest
+    container_name: pollux-a2a
+    command: python -m a2a_variant.server --host 0.0.0.0 --port 8003 --base-url http://localhost:8003
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    environment:
+      CHROMA_MODE: http
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      DATABASE_URL: sqlite+aiosqlite:///data/pollux.db
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - chromadb
+    restart: unless-stopped
+
+volumes:
+  chroma_data:

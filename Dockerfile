@@ -1,13 +1,14 @@
 # syntax=docker/dockerfile:1.6
 #
-# Pollux base image. Single Dockerfile, multiple commands — docker-compose
-# overrides CMD per service (api / ui / mcp / a2a) in later phases.
+# Pollux base image. One Dockerfile, one image — docker-compose overrides
+# the CMD per service so api / ui / mcp / a2a all run from this same image.
 #
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Build tooling for native wheels + git for ragas/gitpython once it's added.
+# Build tooling for native wheels + git (gitpython probes for the binary
+# on import even when no git ops are performed — DocuMind lesson).
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         curl \
@@ -23,8 +24,11 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    GIT_PYTHON_REFRESH=quiet
+    GIT_PYTHON_REFRESH=quiet \
+    PYTHONPATH=/app
 
-# Phase 1 default — verifies the core module imports cleanly. Replaced by
-# uvicorn / streamlit / MCP server / A2A endpoints in later phases.
-CMD ["python", "-m", "core.smoketest"]
+# Default — runs the REST API (the surface most consumers want). docker-compose
+# overrides this per service: streamlit for the UI, `python -m mcp_variant.server`
+# for MCP, `python -m a2a_variant.server` for A2A.
+EXPOSE 8001
+CMD ["python", "-m", "api.server", "--host", "0.0.0.0", "--port", "8001"]

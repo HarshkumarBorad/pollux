@@ -47,7 +47,12 @@ startup via `POLLUX_ORCHESTRATION=mcp` or `=a2a`.
 - [x] **Phase 7** — A2A variant
 - [x] **Phase 8** — REST API + WebSocket streaming
 - [x] **Phase 9** — Streamlit UI (chat / ticket inbox / ops workflows / agent log)
-- [ ] **Phase 10** — Observability, deployment, demo polish
+- [x] **Phase 10** — Observability, deployment, demo polish
+
+> **All 10 phases shipped.** See `docs/mcp_vs_a2a.md` for the headline
+> comparison doc, `data/` for the bundled sample content, and the
+> [🐳 Run the whole stack with Docker](#-run-the-whole-stack-with-docker)
+> section below for one-command deploy.
 
 ## 🚀 Phase 1 quickstart
 
@@ -71,12 +76,39 @@ python -m core.smoketest
 You should see structured log lines confirming the three sample task types
 serialize / deserialize cleanly and an OpenTelemetry span dump to stdout.
 
-Or via Docker:
+## 🐳 Run the whole stack with Docker
+
+After Phase 10, `docker compose up -d` brings up **every variant at once**:
 
 ```cmd
-docker compose build core
-docker compose run --rm core
+:: 1. Configure HF_TOKEN (and optionally OPENAI_API_KEY) in .env
+copy .env.example .env
+
+:: 2. Bring up all five services (chromadb + api + ui + mcp + a2a)
+docker compose up -d
+
+:: 3. Ingest the bundled sample knowledge into ChromaDB
+docker compose exec api python scripts/ingest_samples.py
 ```
+
+| Service | URL | Purpose |
+|---|---|---|
+| `chromadb` | http://localhost:8000 | Vector store |
+| `api`      | http://localhost:8001/docs | REST API + Swagger UI |
+| `ui`       | http://localhost:8501 | Streamlit (open this in your browser) |
+| `mcp`      | http://localhost:8002/mcp | MCP server (Streamable HTTP) |
+| `a2a`      | http://localhost:8003/ | A2A discovery (5 agent endpoints) |
+
+Drop the bundled sample tickets into the UI's **📦 Tickets** page, paste
+the bundled meeting transcript into **📋 Workflows**, or ask any of the
+HR / IT questions from **💬 Chat** — all on real data ingested in step 3.
+
+Observability is on out of the box:
+- **Prometheus** scrape target: `http://localhost:8001/metrics`
+  (auto-instrumented FastAPI + Pollux-specific task/agent counters).
+- **Structured logs** to stdout (JSON when `LOG_FORMAT=json`).
+- **OpenTelemetry** traces to stdout in dev, OTLP HTTP in prod
+  (`OTEL_EXPORTER_ENDPOINT`).
 
 ### Phase 2 — try the knowledge layer
 
