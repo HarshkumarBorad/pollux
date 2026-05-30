@@ -25,6 +25,14 @@ services:
       IS_PERSISTENT: "TRUE"
       PERSIST_DIRECTORY: /chroma/chroma
     restart: unless-stopped
+    # /api/v2/heartbeat exists on chromadb 0.5+. wget is available in the
+    # base image; using `nc -z` would be smaller but isn't installed.
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "wget --quiet --spider http://localhost:8000/api/v2/heartbeat"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
 
   api:
     build: .
@@ -46,7 +54,8 @@ services:
       # services see the same task store.
       - ./data:/app/data
     depends_on:
-      - chromadb
+      chromadb:
+        condition: service_healthy
     restart: unless-stopped
 
   ui:
@@ -85,7 +94,8 @@ services:
     volumes:
       - ./data:/app/data
     depends_on:
-      - chromadb
+      chromadb:
+        condition: service_healthy
     restart: unless-stopped
 
   a2a:
@@ -105,7 +115,8 @@ services:
     volumes:
       - ./data:/app/data
     depends_on:
-      - chromadb
+      chromadb:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
