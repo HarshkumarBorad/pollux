@@ -7,7 +7,7 @@ sdk: docker
 app_port: 7860
 pinned: true
 license: mit
-short_description: Multi-agent system with two interchangeable orchestration protocols
+short_description: Multi-agent task automation — MCP + A2A variants
 models:
   - Qwen/Qwen2.5-7B-Instruct
   - BAAI/bge-m3
