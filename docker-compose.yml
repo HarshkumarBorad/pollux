@@ -25,14 +25,20 @@ services:
       IS_PERSISTENT: "TRUE"
       PERSIST_DIRECTORY: /chroma/chroma
     restart: unless-stopped
-    # /api/v2/heartbeat exists on chromadb 0.5+. wget is available in the
-    # base image; using `nc -z` would be smaller but isn't installed.
+    # chromadb 0.5.x exposes /api/v1/heartbeat (the /api/v2 prefix arrived
+    # in 0.6+). Use python for the probe — guaranteed in the chromadb
+    # image since chromadb itself is a Python service; wget / curl aren't
+    # included.
     healthcheck:
-      test: ["CMD", "/bin/sh", "-c", "wget --quiet --spider http://localhost:8000/api/v2/heartbeat"]
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/heartbeat', timeout=2).read()"
       interval: 5s
-      timeout: 3s
+      timeout: 4s
       retries: 12
-      start_period: 10s
+      start_period: 15s
 
   api:
     build: .
