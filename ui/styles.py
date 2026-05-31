@@ -308,17 +308,21 @@ button[data-baseweb="tab"] {
     line-height: 1.5;
 }
 
-/* ===== Answer panel ==================================================== */
-.pollux-answer {
-    padding: 18px 20px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-    animation: pollux-fade-in 360ms ease-out both;
-    line-height: 1.6;
+/* ===== Native bordered containers ====================================== */
+/* `st.container(border=True)` renders as div[data-testid="stVerticalBlockBorderWrapper"].
+   Style that directly so it gets the gradient + subtle hover shadow without
+   needing inline HTML wrappers (which break across separate st.markdown calls). */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+    border-radius: 12px !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: box-shadow 200ms ease;
+    animation: pollux-fade-in 320ms ease-out both;
 }
-.pollux-answer h3 { margin-top: 0; }
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
 
 /* ===== Utility classes ================================================= */
 .pollux-text-muted   { color: #94a3b8; }

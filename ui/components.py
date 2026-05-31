@@ -111,14 +111,15 @@ def render_task_result(task: dict) -> None:
     verdict = (result.get("artifacts") or {}).get("qa_verdict")
 
     st.markdown("### 💡 Answer")
-    # Use Streamlit's markdown renderer inside our custom-styled container.
-    answer_container = st.container()
-    with answer_container:
-        st.markdown(
-            "<div class='pollux-answer'>", unsafe_allow_html=True
-        )
+    # IMPORTANT: each st.markdown() call is its own DOM block — wrapping a
+    # separate st.markdown(summary) between st.markdown("<div>") and
+    # st.markdown("</div>") leaves the <div> empty and renders the summary
+    # as a sibling. Use Streamlit's native bordered container instead, which
+    # correctly wraps everything inside the same DOM node. The gradient look
+    # is supplied by the CSS targeting stVerticalBlockBorderWrapper in
+    # styles.py — no inline HTML wrapping needed.
+    with st.container(border=True):
         st.markdown(summary)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     citations = result.get("citations") or []
     if citations:
