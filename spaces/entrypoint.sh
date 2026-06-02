@@ -35,15 +35,19 @@ asyncio.run(create_all_tables())
 " || { echo "ERROR: DB migration failed"; exit 1; }
 
 # 2. Check existing chunk count. If 0 → ingest sample knowledge.
+#    Pipe through `tail -n 1` because importing core.knowledge.client triggers
+#    structlog initialization, which writes a "knowledge.client_init" line to
+#    stdout. Without the tail, that log line gets captured into $TOTAL_CHUNKS
+#    and the `= "0"` comparison silently fails — ingest is skipped, collection
+#    stays empty, every retrieval returns "no relevant documents".
 echo "==> Checking knowledge collection..."
 TOTAL_CHUNKS=$(python -c "
 try:
     from core.knowledge.client import get_collection
     print(get_collection().count())
-except Exception as exc:
-    import sys
+except Exception:
     print(0)
-" 2>/dev/null || echo "0")
+" 2>/dev/null | tail -n 1 || echo "0")
 
 if [ "$TOTAL_CHUNKS" = "0" ]; then
     echo "==> Knowledge is empty — ingesting bundled sample docs..."

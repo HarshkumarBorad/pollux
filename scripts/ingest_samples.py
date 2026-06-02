@@ -40,6 +40,7 @@ async def _main(args) -> int:
         return 1
 
     grand_total = 0
+    failures: list[str] = []
     for domain in KnowledgeDomain:
         path = DOCS_ROOT / domain.value
         if not path.is_dir():
@@ -49,11 +50,26 @@ async def _main(args) -> int:
             print(f"  [skip] {domain.value}: no supported files in {path}")
             continue
         log.info("ingest.start", domain=domain.value, path=str(path))
-        count = await ingest_directory(path, domain, reset_domain=args.reset)
+        try:
+            count = await ingest_directory(path, domain, reset_domain=args.reset)
+        except Exception as exc:
+            # One domain blowing up (e.g. HF Inference 503 during embedding)
+            # must not abort the rest — otherwise a single transient error
+            # leaves later domains empty and the next boot's chunk-count
+            # check skips ingest entirely.
+            failures.append(domain.value)
+            log.error("ingest.failed", domain=domain.value, error=str(exc))
+            print(f"  [FAIL] {domain.value}: {exc}", file=sys.stderr)
+            continue
         grand_total += count
         print(f"  [ok]   {domain.value}: {count} chunks ingested from {path}")
 
     print(f"\nDone. Total chunks ingested across all domains: {grand_total}")
+    if failures:
+        print(f"WARN: ingest failed for: {', '.join(failures)}", file=sys.stderr)
+        # Return non-zero only if literally nothing made it — callers (the HF
+        # Space entrypoint) can decide whether partial success is OK.
+        return 0 if grand_total > 0 else 1
     return 0
 
 
