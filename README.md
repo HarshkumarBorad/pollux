@@ -1,5 +1,7 @@
 # 🌟 Pollux — Multi-Agent System for Organizational Automation
 
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://huggingface.co/spaces/Harshborad/pollux)
+
 Six domain-specialist agents working together to automate **customer support**,
 **internal employee Q&A**, and **operations workflows** (meeting → action items).
 The same agent roster runs under **two interchangeable orchestration protocols** —
@@ -8,6 +10,33 @@ Anthropic's MCP and Google's A2A — picked via a single env var.
 > Built end-to-end as a portfolio project. Sibling to
 > [DocuMind](https://github.com/HarshkumarBorad/documind). Phase-by-phase build,
 > production-ready target.
+
+---
+
+## 🎯 Try it live
+
+**[→ Open Pollux on HuggingFace Spaces](https://huggingface.co/spaces/Harshborad/pollux)**
+
+Sample Aurora Labs knowledge (HR / IT / product docs) is pre-ingested. From the
+sidebar:
+
+| Page | Paste / do | What you'll see |
+|---|---|---|
+| 💬 **Chat** | *"What is the leave policy?"* | Coordinator routes to HR specialist; pipeline events stream live |
+| 💬 **Chat** | *"Which Python version is required for the SDK?"* | Routes to IT specialist |
+| 📦 **Tickets** | Submit a customer complaint | Customer-Facing agent drafts a tone-shifted reply |
+| 📋 **Workflows** | Paste a meeting transcript | Ops Planner returns action items as JSON |
+| 📜 **Agent Log** | — | Every task with its full event timeline |
+
+> ⏱️ **Cold start:** if the Space has been sleeping, the first request takes
+> 30–60s while the container wakes and HF Inference warms up. Subsequent
+> queries are fast.
+
+> 🔄 **What the Space includes:** REST API + Streamlit UI in a single container.
+> The **MCP variant** (`:8002`) and **A2A variant** (`:8003`) — the headline
+> differentiator — require a multi-port deploy. Run `docker compose up -d`
+> locally to see them, and read [`docs/mcp_vs_a2a.md`](docs/mcp_vs_a2a.md) for
+> the comparison.
 
 ---
 

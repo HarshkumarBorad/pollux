@@ -24,40 +24,38 @@ tags:
 
 # 🌟 Pollux
 
-Multi-agent system for organizational task automation. Six specialist agents
-working together — same agent business logic exposed through **two
-interchangeable inter-agent transports**: Anthropic's MCP and Google's A2A.
+Six specialist agents — HR, IT, Customer-Facing, Ops Planner, Coordinator, Escalation/QA — collaborating through a single orchestrator. The same agent business logic is exposed via **two interchangeable inter-agent transports**: Anthropic's **MCP** and Google's **A2A**.
 
-This Space runs Pollux's **REST API + Streamlit UI** in a single container
-(embedded ChromaDB, embedded SQLite). The MCP and A2A variants are part of
-the full repo but require a multi-service deploy — see the GitHub repo for
-the docker-compose setup.
+## 👉 Try this first
 
-> 🛠️ Full source, MCP variant, A2A variant, and docker-compose setup:
-> [github.com/HarshkumarBorad/pollux](https://github.com/HarshkumarBorad/pollux)
+Open the **💬 Chat** tab in the sidebar and paste:
+
+> *What is the leave policy?*
+
+Hit Enter. Watch the right-side pipeline panel: the **Coordinator** classifies the intent, routes to the **HR Specialist**, the specialist retrieves from the pre-ingested knowledge base, the **Escalation/QA** agent reviews the answer, and you get a cited response. **This streaming flow IS the multi-agent system at work** — it's not a single LLM call.
+
+⏱️ First request after sleep takes 30–60s (container wake + HF Inference warmup). After that it's snappy.
+
+## More to try
+
+| Page | Paste / do | What it demonstrates |
+|---|---|---|
+| 💬 **Chat** | *"Which Python version is required for the SDK?"* | Coordinator picks IT instead of HR — same agent roster, different routing |
+| 📦 **Tickets** | Submit a customer complaint | Two-stage flow: internal draft → tone-shifted external reply |
+| 📋 **Workflows** | Paste a meeting transcript | Ops Planner decomposes free text into structured action items (JSON) |
+| 📜 **Agent Log** | — | Every task with its full event timeline (status transitions, retries, verdicts) |
+
+## What this Space is — and isn't
+
+This Space ships the **REST API + Streamlit UI** in a single container (embedded ChromaDB, embedded SQLite, sample knowledge auto-ingested on first boot). The **MCP** and **A2A** variants — the headline differentiator — are part of the full repo but need a multi-service deploy, so they're not here.
+
+To see the full stack (5 services: chromadb + api + ui + mcp + a2a + Prometheus), clone the repo and run `docker compose up -d`.
+
+> 🛠️ **Full source, MCP variant, A2A variant, docker-compose setup:** [github.com/HarshkumarBorad/pollux](https://github.com/HarshkumarBorad/pollux)
 >
-> 📖 The headline doc — **MCP vs A2A: when to use which** —
-> [docs/mcp_vs_a2a.md](https://github.com/HarshkumarBorad/pollux/blob/main/docs/mcp_vs_a2a.md)
+> 📖 **The headline doc — MCP vs A2A: when to use which:** [docs/mcp_vs_a2a.md](https://github.com/HarshkumarBorad/pollux/blob/main/docs/mcp_vs_a2a.md)
 
-## Try it
-
-The Space ships with **sample Aurora Labs knowledge** pre-ingested. From the
-sidebar:
-
-| Page | Try |
-|---|---|
-| 💬 **Chat** | *"What is the leave policy?"* — Coordinator routes to HR specialist |
-| 💬 **Chat** | *"Which Python version is required for the SDK?"* — routes to IT |
-| 📦 **Tickets** | Paste a customer complaint — get a tone-shifted draft reply |
-| 📋 **Workflows** | Drop a meeting transcript — get action items as JSON |
-| 📜 **Agent Log** | Inspect every task with its full event timeline |
-
-Watch the **pipeline progress events stream live** as the Coordinator
-routes → Specialist answers → Escalation/QA reviews. The flow takes
-30–60s end-to-end on a free-tier HF token (HF Inference cold-starts add
-latency on the first call after sleep).
-
-## How this differs from the GitHub repo
+## How this Space differs from the GitHub repo
 
 | Aspect | GitHub repo (docker-compose) | This Space |
 |---|---|---|
@@ -67,18 +65,13 @@ latency on the first call after sleep).
 | MCP variant | Port 8002 public | Not included |
 | A2A variant | Port 8003 public | Not included |
 
-Same agents, same orchestrator, same DB schema — just collapsed into one
-container because HF Spaces only exposes one public port.
+Same agents, same orchestrator, same DB schema — just collapsed into one container because HF Spaces only exposes one public port.
 
-## Configuration
+## Notes for visitors
 
-You'll need a HuggingFace Inference token (free tier works). Add it as a
-**Space secret**:
+- **Persistence:** the embedded SQLite + ChromaDB live in the container's writable layer. They survive sleep/wake but get wiped on rebuilds (every code push). Sample knowledge re-ingests automatically — your test tasks won't.
+- **HF Inference quirks:** occasional 503s from a busy provider. Wait 30s and retry, or pick a different model from the Chat sidebar.
 
-1. Settings → **Variables and secrets** → **New secret**
-2. Name: `HF_TOKEN`. Value: your token.
-3. Save and restart the Space.
+## Self-hosting
 
-Optionally add `OPENAI_API_KEY` as a second secret to upgrade the
-Coordinator + Ops Planner agents to GPT-4o-mini (better classification +
-planning quality). Specialists stay on HF either way.
+This Space is configured with a `HF_TOKEN` secret so visitors don't need their own. If you want to fork this and run your own Space (or contribute fixes back), see [`spaces/DEPLOY.md`](https://github.com/HarshkumarBorad/pollux/blob/main/spaces/DEPLOY.md) in the repo for the full deploy flow.
