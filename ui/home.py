@@ -98,17 +98,17 @@ except APIError as exc:
 st.markdown("### Try Pollux")
 
 nav_items = [
-    ("💬", "Chat", "Ask HR or IT questions — Coordinator routes, Specialist answers, Escalation reviews."),
-    ("📦", "Tickets", "Submit customer support tickets — get a tone-shifted reply draft you can paste into your support tool."),
-    ("📋", "Workflows", "Drop a meeting transcript — Ops Planner extracts action items with assignee, priority, and deadline."),
-    ("📜", "Agent Log", "Browse the full task audit trail — per-task event timeline, status filters, error introspection."),
+    ("💬", "Chat", "Ask HR or IT questions — Coordinator routes, Specialist answers, Escalation reviews.", "/Chat"),
+    ("📦", "Tickets", "Submit customer support tickets — get a tone-shifted reply draft you can paste into your support tool.", "/Tickets"),
+    ("📋", "Workflows", "Drop a meeting transcript — Ops Planner extracts action items with assignee, priority, and deadline.", "/Workflows"),
+    ("📜", "Agent Log", "Browse the full task audit trail — per-task event timeline, status filters, error introspection.", "/Agent_Log"),
 ]
 nav_cols = st.columns(4, gap="small")
-for col, (emoji, title, description) in zip(nav_cols, nav_items):
+for col, (emoji, title, description, page_url) in zip(nav_cols, nav_items):
     with col:
-        render_nav_card(emoji, title, description)
+        render_nav_card(emoji, title, description, page_url=page_url)
 
-st.caption("Use the sidebar to switch pages →")
+st.caption("Click a card to jump in, or use the sidebar →")
 
 # --- Recent activity -----------------------------------------------------
 

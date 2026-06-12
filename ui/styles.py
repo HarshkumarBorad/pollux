@@ -203,6 +203,17 @@ section[data-testid="stSidebar"] {
 }
 
 /* ===== Nav cards ======================================================= */
+/* When a nav card is wrapped in an anchor (whole-card-clickable mode),
+   strip the default link underline + color shift — the card chrome already
+   carries the hover affordance. Cursor becomes `pointer` automatically. */
+.pollux-nav-link,
+.pollux-nav-link:hover,
+.pollux-nav-link:visited,
+.pollux-nav-link:active {
+    text-decoration: none !important;
+    color: inherit !important;
+    display: block;
+}
 .pollux-nav-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;

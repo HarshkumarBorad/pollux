@@ -188,18 +188,36 @@ def render_event_timeline(events: list[dict]) -> None:
         )
 
 
-def render_nav_card(emoji: str, title: str, description: str) -> None:
-    """Polished home-page nav card with consistent height + hover lift."""
-    st.markdown(
-        f"""
-        <div class='pollux-nav-card'>
-            <div style='font-size:1.6rem;'>{emoji}</div>
-            <div class='pollux-nav-title'>{_esc(title)}</div>
-            <div class='pollux-nav-desc'>{_esc(description)}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+def render_nav_card(
+    emoji: str,
+    title: str,
+    description: str,
+    page_url: str | None = None,
+) -> None:
+    """Polished home-page nav card with consistent height + hover lift.
+
+    If `page_url` is provided, the entire card becomes a clickable link to that
+    Streamlit page (e.g. ``"/Chat"`` for ``pages/1_Chat.py``). Uses
+    ``target="_self"`` so navigation stays in the current tab — important
+    inside the HF Spaces iframe, which would otherwise spawn a new top-level
+    window for a relative URL.
+    """
+    card_html = (
+        f"<div class='pollux-nav-card'>"
+        f"<div style='font-size:1.6rem;'>{emoji}</div>"
+        f"<div class='pollux-nav-title'>{_esc(title)}</div>"
+        f"<div class='pollux-nav-desc'>{_esc(description)}</div>"
+        f"</div>"
     )
+    if page_url:
+        st.markdown(
+            f"<a href='{_esc(page_url)}' target='_self' class='pollux-nav-link'>"
+            f"{card_html}"
+            f"</a>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(card_html, unsafe_allow_html=True)
 
 
 def render_agent_roster_card(agent: dict, style: dict) -> None:
